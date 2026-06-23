@@ -58,11 +58,107 @@ Tres tests mínimos en la carpeta `__tests__/`:
 > Nota: las notificaciones locales funcionan en Expo Go. Para notificaciones en segundo plano y
 > el resto de recursos nativos, se recomienda el emulador de Android Studio o un development build.
 
+# 🧪 Tests — App Compras
+
+Este proyecto incluye una suite de tests unitarios ubicada en la carpeta `__tests__/`. Los tests cubren tres capas distintas de la aplicación: lógica de negocio pura, estado global y componentes visuales.
+
+---
+
+## Herramientas utilizadas
+
+- **Jest** — runner de tests y sistema de assertions
+- **@testing-library/react-native** — renderizado y simulación de interacciones sobre componentes React Native
+- **Zustand** (API de `getState` / `setState`) — acceso directo al store para testear acciones sin necesidad de montar componentes
+
+---
+
+## Estructura de la suite
+
+```
+__tests__/
+├── validations.test.js       # Lógica de negocio pura (funciones utilitarias)
+├── useShoppingStore.test.js  # Estado global (store Zustand)
+└── BotonCustom.test.js       # Componente reutilizable (UI)
+```
+
+Cada archivo apunta a una capa diferente de la arquitectura, lo que permite identificar rápidamente dónde falla algo cuando un test no pasa.
+
+---
+
+## Descripción de cada archivo
+
+### `validations.test.js`
+
+Testea las funciones `validarNombreProducto` y `formatearNombreProducto` de `src/utils/validations.js`. Son funciones puras —reciben un valor y devuelven un resultado— por lo que no requieren ningún setup especial.
+
+| Test | Qué verifica |
+|---|---|
+| Rechaza texto vacío | `validarNombreProducto('')` devuelve `false` |
+| Rechaza solo espacios | `validarNombreProducto(' ')` devuelve `false` |
+| Rechaza un solo carácter | `validarNombreProducto('a')` devuelve `false` |
+| Acepta un nombre válido | `validarNombreProducto('Yerba')` devuelve `true` |
+| Primera letra en mayúscula | `formatearNombreProducto('yerba')` devuelve `'Yerba'` |
+| Recorta espacios extremos | `formatearNombreProducto(' pan ')` devuelve `'Pan'` |
+
+---
+
+### `useShoppingStore.test.js`
+
+Testea el store global de Zustand (`src/store/useShoppingStore.js`). Zustand expone `getState()` y `setState()` directamente sobre el store, lo que permite manipular y verificar el estado sin montar ningún componente.
+
+Antes de cada test se reinicia el store a un estado limpio (`productos: []`) usando `beforeEach`, garantizando que los tests sean independientes entre sí.
+
+| Test | Qué verifica |
+|---|---|
+| Estado inicial vacío | El array `productos` arranca como `[]` |
+| `addProducto` | Agrega un producto y verifica nombre y longitud del array |
+| `removeProducto` | Elimina por `id` y verifica que el producto correcto persiste |
+| `updateProducto` | Modifica un campo de un producto existente |
+
+---
+
+### `BotonCustom.test.js`
+
+Testea el componente `BotonCustom` de `src/components/BotonCustom.js` usando `@testing-library/react-native`. Se verifica tanto el renderizado visual como el comportamiento ante interacciones del usuario.
+
+| Test | Qué verifica |
+|---|---|
+| Renderiza el título | El texto pasado por prop `titulo` aparece en pantalla |
+| Ejecuta `onPress` | Al presionar el botón, el callback se llama exactamente una vez |
+
+---
+
 ## Cómo correr los tests
 
 ```bash
-npm test
+npx jest
 ```
+
+Para ver un reporte detallado:
+
+```bash
+npx jest --verbose
+```
+
+---
+
+## Uso de IA en el desarrollo de los tests
+
+Los tests de este proyecto fueron desarrollados con asistencia de IA (Claude). El proceso fue el siguiente:
+
+**1. Definición de la estrategia de testing**
+Se le indicó a la IA la arquitectura del proyecto (componentes, store Zustand, utilidades) y se le pidió que propusiera qué capas testear y con qué herramientas. La IA recomendó separar los tests en tres categorías —lógica pura, estado global y componentes— para cubrir distintas superficies de error de forma independiente.
+
+**2. Generación inicial de los tests**
+Con el código de cada módulo como contexto, la IA generó los bloques `describe` e `it` con sus assertions correspondientes. Los casos de borde (string vacío, solo espacios, un carácter) para `validarNombreProducto` fueron sugeridos directamente por la IA en base al comportamiento esperado de la función.
+
+**3. Setup de aislamiento del store**
+La IA identificó que los tests del store Zustand necesitaban un `beforeEach` para reiniciar el estado entre tests, evitando que un test afecte al siguiente. Esto fue incorporado al archivo junto con la explicación en el comentario del código.
+
+**4. Revisión y ajustes manuales**
+Una vez generados los tests, se revisó manualmente que los nombres de los módulos importados y los paths relativos fueran correctos para la estructura del proyecto.
+
+En resumen, la IA aceleró la escritura de los tests y aportó criterios sobre qué casos cubrir, mientras que la revisión humana garantizó que el código generado encajara correctamente con el proyecto real.
 
 ## Stack técnico
 - React Native 0.81 / Expo SDK 54
